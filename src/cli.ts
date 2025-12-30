@@ -1,49 +1,106 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
-import { getResponse } from './agent';
-import { version } from '../package.json';
-import { logInfo, logError, logDebug, logWarning } from './logging';
+/**
+ * DeepResearch CLI
+ *
+ * Modern CLI using the refactored architecture
+ */
 
-const program = new Command();
+import { ResearchAgent } from './agents/index.js';
+import { OpenAIProvider } from './services/llm/LLMProvider.js';
+import { JinaSearchProvider } from './services/search/SearchProvider.js';
+import { WebContentReader } from './services/content/ContentReader.js';
+import { StateManager } from './core/base/StateManager.js';
+import { loadConfigFromEnv } from './core/types/schemas.js';
 
-program
-  .name('deepresearch')
-  .description('AI-powered research assistant that keeps searching until it finds the answer')
-  .version(version)
-  .argument('<query>', 'The research query to investigate')
-  .option('-t, --token-budget <number>', 'Maximum token budget', (val) => {
-    const num = parseInt(val);
-    if (isNaN(num)) throw new Error('Invalid token budget: must be a number');
-    return num;
-  }, 2000000)  // Increased from 1M to 2M tokens
-  .option('-m, --max-attempts <number>', 'Maximum bad attempts before giving up', (val) => {
-    const num = parseInt(val);
-    if (isNaN(num)) throw new Error('Invalid max attempts: must be a number');
-    return num;
-  }, 3)
-  .option('-v, --verbose', 'Show detailed progress')
-  .action(async (query: string, options: any) => {
-    try {
-      const { result } = await getResponse(
-        query,
-        parseInt(options.tokenBudget),
-        parseInt(options.maxAttempts),
-      );
+/**
+ * Run research query
+ */
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const query = args[0];
 
-      if (result.action === 'answer') {
-        logInfo('\nAnswer:', { answer: result.answer });
-        if (result.references?.length) {
-          logInfo('\nReferences:');
-          for (const ref of result.references) {
-            logInfo(`- ${ref.url}`);
-            logInfo(`  "${ref.exactQuote}"`);
-          }
-        }
-      }
-    } catch (error) {
-      logError('Error:', { error: error instanceof Error ? error.message : String(error) });
-      process.exit(1);
+  if (!query) {
+    console.error('Usage: npm run dev "your research query"');
+    process.exit(1);
+  }
+
+  try {
+    // Load configuration
+    const config = loadConfigFromEnv();
+
+    // Create providers
+    const llmProvider = new OpenAIProvider({
+      name: 'openai',
+      apiKey: config.llm.apiKey,
+      ...(config.llm.baseUrl && { baseUrl: config.llm.baseUrl }),
+      model: config.llm.model,
+      timeout: config.llm.timeout,
+    });
+
+    const searchProvider = new JinaSearchProvider({
+      name: 'jina',
+      apiKey: config.search.apiKey,
+      maxResults: config.search.maxResults,
+      timeout: config.search.timeout,
+    });
+
+    const contentReader = new WebContentReader({
+      timeout: 30000,
+    });
+
+    // Create state manager
+    const stateManager = new StateManager({
+      tokenBudget: config.limits.tokenBudget,
+      maxKnowledge: 100,
+      maxUrls: 50,
+    });
+
+    // Create agent
+    const agent = new ResearchAgent(
+      {
+        tokenBudget: config.limits.tokenBudget,
+        maxSteps: config.limits.maxSteps,
+        maxDuration: config.limits.maxDuration,
+        maxBadAttempts: config.limits.maxBadAttempts,
+        timeout: 30000,
+        enableTelemetry: config.features.enableTelemetry,
+      },
+      { llmProvider, searchProvider, contentReader },
+      stateManager
+    );
+
+    console.log(`🔍 Researching: ${query}\n`);
+
+    // Run research
+    const result = await agent.research(query);
+
+    // Display results
+    console.log('✨ Research Complete!\n');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`Answer:\n${result.answer}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`\n📊 Metrics:`);
+    console.log(`  Duration: ${(result.duration / 1000).toFixed(2)}s`);
+    console.log(`  Steps: ${result.steps}`);
+    console.log(`  Searches: ${result.metrics.searchCount}`);
+    console.log(`  Visits: ${result.metrics.visitCount}`);
+    console.log(`  Errors: ${result.metrics.errorCount}`);
+
+    if (result.references.length > 0) {
+      console.log(`\n📚 References:`);
+      result.references.forEach((ref, i) => {
+        console.log(`  ${i + 1}. ${ref.url}`);
+        console.log(`     "${ref.quote.slice(0, 100)}..."`);
+      });
     }
-  });
+  } catch (error) {
+    console.error('❌ Error:', error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
 
-program.parse();
+// Run
+main().catch((error) => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

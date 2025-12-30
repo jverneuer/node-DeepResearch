@@ -3,8 +3,6 @@
  * Prevents infinite loops through multiple exit conditions
  */
 
-import type { AgentConfig, ResearchResult, TerminalState, AgentState } from './types/agent.js';
-import type { AgentError, TimeoutError as AgentTimeoutError } from './types/errors.js';
 import { setTimeout } from 'node:timers/promises';
 
 /**
