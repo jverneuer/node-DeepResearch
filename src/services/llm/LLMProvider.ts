@@ -199,3 +199,6 @@ export function isTokenEvent(event: StreamEvent): event is StreamEvent & { reado
 export function isErrorEvent(event: StreamEvent): event is StreamEvent & { readonly error: string } {
   return event.type === 'error' && event.error !== undefined;
 }
+
+// Re-export implementations
+export { OpenAIProvider } from './OpenAIProvider.js';

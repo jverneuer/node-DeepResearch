@@ -278,3 +278,6 @@ export function extractMetadata(html: string, url: string): ContentMetadata {
 
   return metadata;
 }
+
+// Re-export implementations
+export { WebContentReader } from './WebContentReader.js';

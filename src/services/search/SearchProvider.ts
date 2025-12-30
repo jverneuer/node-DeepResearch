@@ -247,3 +247,6 @@ export function processSearchResults(
 
   return processed;
 }
+
+// Re-export implementations
+export { JinaSearchProvider } from './JinaSearchProvider.js';
