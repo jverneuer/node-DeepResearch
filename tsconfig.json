@@ -1,18 +1,123 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "node16",
+    // ==========================================
+    // LANGUAGE & LIBRARY
+    // ==========================================
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    // ==========================================
+    // TYPE SAFETY - STRICTEST POSSIBLE
+    // ==========================================
+    "strict": true,
+    "noUncheckedIndexedAccess": true,          // arr[i] is undefined if index not guaranteed
+    "noImplicitOverride": true,                // Must use override keyword
+    "noPropertyAccessFromIndexSignature": true, // obj.key must be defined, not obj['key']
+    "exactOptionalPropertyTypes": true,        // ?X is different from X | undefined
+    "noImplicitReturns": true,                 // All code paths must return
+    "noFallthroughCasesInSwitch": true,        // Switch must have break/return
+    "noUnusedLocals": true,                     // Error on unused variables
+    "noUnusedParameters": true,                 // Error on unused parameters
+    "allowUnusedLabels": false,                 // Error on unused labels
+    "allowUnreachableCode": false,              // Error on unreachable code
+    "noImplicitThis": true,                     // 'this' must be typed
+    "noImplicitAny": true,                      // Disallow 'any' type
+    "alwaysStrict": true,                       // Always use strict mode
+    "strictNullChecks": true,                   // Strict null checks
+    "strictFunctionTypes": true,                // Strict function types
+    "strictBindCallApply": true,                // Strict bind/call/apply
+    "strictPropertyInitialization": true,       // Class properties must be initialized
+
+    // ==========================================
+    // MODULES & IMPORTS
+    // ==========================================
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "@core/*": ["core/*"],
+      "@agents/*": ["agents/*"],
+      "@tools/*": ["tools/*"],
+      "@services/*": ["services/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["core/types/*"],
+      "@config/*": ["config/*"]
+    },
+
+    // ==========================================
+    // EMIT
+    // ==========================================
     "outDir": "./dist",
     "rootDir": "./src",
     "sourceMap": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "resolveJsonModule": true
+    "declaration": true,
+    "declarationMap": true,
+    "removeComments": false,                   // Keep documentation comments
+    "newLine": "lf",                           // Use LF line endings
+    "stripInternal": true,                     // Strip @internal declarations
+
+    // ==========================================
+    // INTEROP CONSTRAINTS
+    // ==========================================
+    "forceConsistentCasingInFileNames": true,   // Error on case mismatches
+    "skipDefaultLibCheck": true,                // Skip .d.ts checking (faster)
+    "skipLibCheck": true,                       // Skip all .d.ts checking
+
+    // ==========================================
+    // EXPERIMENTAL - SAFE FEATURES ONLY
+    // ==========================================
+    "useUnknownInCatchVariables": true,         // Catch clauses use 'unknown' instead of 'any'
+    "allowImportingTsExtensions": true,         // Allow importing .ts files
+
+    // ==========================================
+    // DECORATORS - DISABLED
+    // ==========================================
+    // "experimentalDecorators": true,          // ❌ DISABLED - Use Zod instead
+    // "emitDecoratorMetadata": true,           // ❌ DISABLED - Use Zod instead
+
+    // ==========================================
+    // ADVANCED
+    // ==========================================
+    "importsNotUsedAsValues": "remove",         // Remove unused imports
+    "preserveConstEnums": false,                // Preserve const enums
+    "pretty": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["jina-ai/**/*", "**/__tests__/**/*"],
+
+  // ==========================================
+  // INCLUDE / EXCLUDE
+  // ==========================================
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
+
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+
+  // ==========================================
+  // REFERENCES
+  // ==========================================
+  "references": [],
+
+  "watchOptions": {
+    "synchronousWatchDirectoryPattern": "**",
+    "excludeDirectories": [
+      "**/node_modules",
+      "**/dist",
+      "**/build"
+    ],
+    "excludeFiles": [
+      "**/*.spec.ts",
+      "**/*.test.ts"
+    ]
+  }
 }

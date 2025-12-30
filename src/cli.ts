@@ -15,7 +15,7 @@ program
     const num = parseInt(val);
     if (isNaN(num)) throw new Error('Invalid token budget: must be a number');
     return num;
-  }, 1000000)
+  }, 2000000)  // Increased from 1M to 2M tokens
   .option('-m, --max-attempts <number>', 'Maximum bad attempts before giving up', (val) => {
     const num = parseInt(val);
     if (isNaN(num)) throw new Error('Invalid max attempts: must be a number');
