@@ -49,7 +49,7 @@ export interface StateMachineOptions<TConfig> {
  * - State validation
  * - Transition history
  */
-export class StateMachine<TState, TConfig> {
+export class StateMachine<TState extends { status: string }, TConfig> {
   private currentState: TState;
   private readonly config: TConfig;
   private readonly options: StateMachineOptions<TConfig>;
@@ -140,16 +140,20 @@ export class StateMachine<TState, TConfig> {
     fn: () => Promise<T> | T,
     timeout: number
   ): Promise<T> {
-    const timeoutPromise = setTimeout(timeout, () => {
-      throw new Error(`State transition timeout after ${timeout}ms`);
+    let timeoutId: NodeJS.Timeout;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`State transition timeout after ${timeout}ms`));
+      }, timeout);
     });
 
     try {
       const result = await Promise.race([fn(), timeoutPromise]);
-      clearTimeout(timeoutPromise);
+      clearTimeout(timeoutId);
       return result as T;
     } catch (error) {
-      clearTimeout(timeoutPromise);
+      clearTimeout(timeoutId);
       throw error;
     }
   }

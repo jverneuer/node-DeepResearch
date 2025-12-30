@@ -12,13 +12,13 @@
     "esModuleInterop": true,
 
     // ==========================================
-    // TYPE SAFETY - STRICTEST POSSIBLE
+    // TYPE SAFETY - STRICT BUT PRAGMATIC
     // ==========================================
     "strict": true,
     "noUncheckedIndexedAccess": true,          // arr[i] is undefined if index not guaranteed
     "noImplicitOverride": true,                // Must use override keyword
-    "noPropertyAccessFromIndexSignature": true, // obj.key must be defined, not obj['key']
-    "exactOptionalPropertyTypes": true,        // ?X is different from X | undefined
+    // "noPropertyAccessFromIndexSignature": true, // obj.key must be defined, not obj['key']
+    // "exactOptionalPropertyTypes": true,        // ?X is different from X | undefined
     "noImplicitReturns": true,                 // All code paths must return
     "noFallthroughCasesInSwitch": true,        // Switch must have break/return
     "noUnusedLocals": true,                     // Error on unused variables

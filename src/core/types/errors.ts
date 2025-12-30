@@ -102,22 +102,23 @@ export class SearchError extends AgentError {
 export class ContentError extends AgentError {
   readonly code = 'CONTENT_ERROR' as const;
   readonly retryable: boolean;
+  readonly url?: string;
+  readonly originalError?: Error;
 
   constructor(
     message: string,
     url?: string,
     originalError?: Error
   ) {
-    super(message, { url, originalError });
+    super(message, { url });
     // Retry on network errors
     this.retryable = !originalError ||
       (originalError.message.includes('ECONNREFUSED') ||
        originalError.message.includes('ETIMEDOUT') ||
        originalError.message.includes('ENOTFOUND'));
+    this.url = url;
+    this.originalError = originalError;
   }
-
-  readonly url?: string;
-  readonly originalError?: Error;
 }
 
 /**

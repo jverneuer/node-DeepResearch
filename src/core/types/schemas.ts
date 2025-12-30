@@ -144,32 +144,32 @@ export function validateConfig(config: unknown): AppConfig {
 export function loadConfigFromEnv(): AppConfig {
   return AppConfigSchema.parse({
     llm: {
-      name: (process.env.LLM_PROVIDER ?? 'openai') as 'openai' | 'gemini' | 'anthropic',
+      name: (process.env['LLM_PROVIDER'] ?? 'openai') as 'openai' | 'gemini' | 'anthropic',
       apiKey:
-        process.env.LLM_API_KEY ??
-        process.env.OPENAI_API_KEY ??
-        process.env.GEMINI_API_KEY ??
-        process.env.ANTHROPIC_API_KEY ??
+        process.env['LLM_API_KEY'] ??
+        process.env['OPENAI_API_KEY'] ??
+        process.env['GEMINI_API_KEY'] ??
+        process.env['ANTHROPIC_API_KEY'] ??
         '',
-      baseUrl: process.env.OPENAI_BASE_URL,
-      model: process.env.DEFAULT_MODEL_NAME ?? 'gpt-4o-mini',
+      baseUrl: process.env['OPENAI_BASE_URL'],
+      model: process.env['DEFAULT_MODEL_NAME'] ?? 'gpt-4o-mini',
     },
     search: {
-      name: (process.env.SEARCH_PROVIDER ?? 'jina') as 'jina' | 'brave' | 'serper',
+      name: (process.env['SEARCH_PROVIDER'] ?? 'jina') as 'jina' | 'brave' | 'serper',
       apiKey:
-        process.env.JINA_API_KEY ??
-        process.env.BRAVE_API_KEY ??
-        process.env.SERPER_API_KEY ??
+        process.env['JINA_API_KEY'] ??
+        process.env['BRAVE_API_KEY'] ??
+        process.env['SERPER_API_KEY'] ??
         '',
     },
     limits: {
-      maxSteps: parseInt(process.env.MAX_STEPS ?? '100'),
-      maxDuration: parseInt(process.env.MAX_DURATION ?? '300000'),
-      maxBadAttempts: parseInt(process.env.MAX_BAD_ATTEMPTS ?? '3'),
-      tokenBudget: parseInt(process.env.TOKEN_BUDGET ?? '2000000'),
+      maxSteps: parseInt(process.env['MAX_STEPS'] ?? '100'),
+      maxDuration: parseInt(process.env['MAX_DURATION'] ?? '300000'),
+      maxBadAttempts: parseInt(process.env['MAX_BAD_ATTEMPTS'] ?? '3'),
+      tokenBudget: parseInt(process.env['TOKEN_BUDGET'] ?? '2000000'),
     },
     observability: {
-      logLevel: (process.env.LOG_LEVEL ?? 'info') as 'debug' | 'info' | 'warn' | 'error',
+      logLevel: (process.env['LOG_LEVEL'] ?? 'info') as 'debug' | 'info' | 'warn' | 'error',
     },
   });
 }
