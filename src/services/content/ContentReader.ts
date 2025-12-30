@@ -156,7 +156,7 @@ export function extractMainContent(html: string): string {
   content = content.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
 
   // Remove common non-content tags
-  content = content.replace(/<(?:header|footer|nav|aside|sidebar|ad|advertisement)[^>]*>.*?<\/\1>/gis, '');
+  content = content.replace(/<(header|footer|nav|aside|sidebar|ad|advertisement)[^>]*>.*?<\/\1>/gis, '');
 
   // Extract paragraphs
   const paragraphs = content.match(/<p[^>]*>(.*?)<\/p>/gis) || [];
@@ -240,43 +240,36 @@ export function processContent(
  * Extract metadata from HTML
  */
 export function extractMetadata(html: string, url: string): ContentMetadata {
-  const metadata: ContentMetadata = {
-    url,
-  };
-
   // Extract title
   const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-  if (titleMatch) {
-    metadata.title = titleMatch[1].trim();
-  }
+  const title = titleMatch?.[1]?.trim();
 
   // Extract description
   const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["'](.*?)["']/i);
-  if (descMatch) {
-    metadata.description = descMatch[1].trim();
-  }
+  const description = descMatch?.[1]?.trim();
 
   // Extract keywords
   const keywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["'](.*?)["']/i);
-  if (keywordsMatch) {
-    metadata.keywords = keywordsMatch[1].split(',').map((k) => k.trim());
-  }
+  const keywords = keywordsMatch?.[1]?.split(',').map((k) => k.trim());
 
   // Extract author
   const authorMatch = html.match(/<meta[^>]*name=["']author["'][^>]*content=["'](.*?)["']/i);
-  if (authorMatch) {
-    metadata.author = authorMatch[1].trim();
-  }
+  const author = authorMatch?.[1]?.trim();
 
   // Extract published date
   const dateMatch = html.match(
     /<meta[^>]*(?:property|name)=["'](?:article:published_time|datePublished|pubdate)["'][^>]*content=["'](.*?)["']/i
   );
-  if (dateMatch) {
-    metadata.publishedDate = new Date(dateMatch[1]);
-  }
+  const publishedDate = dateMatch?.[1] ? new Date(dateMatch[1]) : undefined;
 
-  return metadata;
+  return {
+    url,
+    title,
+    description,
+    keywords,
+    author,
+    publishedDate,
+  };
 }
 
 // Re-export implementations

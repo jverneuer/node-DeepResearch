@@ -3,7 +3,7 @@
  * Prevents infinite loops through multiple exit conditions
  */
 
-import { setTimeout } from 'node:timers/promises';
+import { setTimeout as setTimeoutPromise } from 'node:timers/promises';
 
 /**
  * State transition handler type
@@ -31,7 +31,7 @@ export interface TransitionHistoryEntry<TState> {
 /**
  * State machine options
  */
-export interface StateMachineOptions<TConfig> {
+export interface StateMachineOptions<TState, TConfig> {
   readonly maxSteps: number;
   readonly maxDuration: number;
   readonly timeout: number;
@@ -52,7 +52,7 @@ export interface StateMachineOptions<TConfig> {
 export class StateMachine<TState extends { status: string }, TConfig> {
   private currentState: TState;
   private readonly config: TConfig;
-  private readonly options: StateMachineOptions<TConfig>;
+  private readonly options: StateMachineOptions<TState, TConfig>;
   private readonly transitionHandlers: ReadonlyMap<string, StateTransitionHandler<TState, TConfig>>;
   private readonly validators: ReadonlyMap<string, StateValidator<TState>>;
   private readonly history: TransitionHistoryEntry<TState>[] = [];
@@ -64,7 +64,7 @@ export class StateMachine<TState extends { status: string }, TConfig> {
   constructor(
     initialState: TState,
     config: TConfig,
-    options: StateMachineOptions<TConfig>,
+    options: StateMachineOptions<TState, TConfig>,
     transitionHandlers: ReadonlyMap<string, StateTransitionHandler<TState, TConfig>>,
     validators: ReadonlyMap<string, StateValidator<TState>>
   ) {
@@ -140,20 +140,16 @@ export class StateMachine<TState extends { status: string }, TConfig> {
     fn: () => Promise<T> | T,
     timeout: number
   ): Promise<T> {
-    let timeoutId: NodeJS.Timeout;
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(new Error(`State transition timeout after ${timeout}ms`));
-      }, timeout);
-    });
+    const timeoutPromise = setTimeoutPromise(timeout, undefined).then(
+      () => {
+        throw new Error(`State transition timeout after ${timeout}ms`);
+      }
+    );
 
     try {
       const result = await Promise.race([fn(), timeoutPromise]);
-      clearTimeout(timeoutId);
       return result as T;
     } catch (error) {
-      clearTimeout(timeoutId);
       throw error;
     }
   }
@@ -253,7 +249,7 @@ export class StateMachine<TState extends { status: string }, TConfig> {
 export function createStateMachine<TState extends { status: string }, TConfig>(
   initialState: TState,
   config: TConfig,
-  options: StateMachineOptions<TConfig>,
+  options: StateMachineOptions<TState, TConfig>,
   handlers: Record<string, StateTransitionHandler<TState, TConfig>>,
   validators?: Record<string, StateValidator<TState>>
 ): StateMachine<TState, TConfig> {

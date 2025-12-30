@@ -10,7 +10,7 @@ import type {
   ContentMetadata,
   ContentReadOptions,
 } from './ContentReader.js';
-import { extractMainContent, cleanText, calculateWordCount, calculateReadingTime, extractMetadata, truncateContent } from './ContentReader.js';
+import { extractMainContent, cleanText, calculateWordCount, extractMetadata, truncateContent } from './ContentReader.js';
 
 /**
  * Web Content Reader implementation

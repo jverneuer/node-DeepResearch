@@ -226,7 +226,6 @@ export function toAgentError(error: unknown): AgentError {
   if (error instanceof Error) {
     return new LLMError(error.message, {
       provider: 'unknown',
-      originalError: error,
     });
   }
 

@@ -231,18 +231,18 @@ export function processSearchResults(
     minRelevance?: number;
   }
 ): ReadonlyArray<SearchResult> {
-  let processed = [...results];
+  let processed: SearchResult[] = [...results];
 
   if (options?.deduplicate !== false) {
-    processed = deduplicateResults(processed);
+    processed = [...deduplicateResults(processed)];
   }
 
   if (options?.sortByRelevance !== false) {
-    processed = sortByRelevance(processed, query);
+    processed = [...sortByRelevance(processed, query)];
   }
 
   if (options?.minRelevance !== undefined) {
-    processed = filterQuality(processed, options.minRelevance);
+    processed = [...filterQuality(processed, options.minRelevance)];
   }
 
   return processed;
