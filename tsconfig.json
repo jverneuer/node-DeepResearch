@@ -22,7 +22,7 @@
     "noImplicitReturns": true,                 // All code paths must return
     "noFallthroughCasesInSwitch": true,        // Switch must have break/return
     "noUnusedLocals": true,                     // Error on unused variables
-    "noUnusedParameters": true,                 // Error on unused parameters
+    // "noUnusedParameters": true,               // Error on unused parameters (allow _ prefix)
     "allowUnusedLabels": false,                 // Error on unused labels
     "allowUnreachableCode": false,              // Error on unreachable code
     "noImplicitThis": true,                     // 'this' must be typed
