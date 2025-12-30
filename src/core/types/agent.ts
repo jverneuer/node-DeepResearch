@@ -26,7 +26,6 @@ export type AgentState =
 export interface InitializationContext {
   readonly query: string;
   readonly startTime: Date;
-  readonly step: number;
 }
 
 /**
@@ -86,36 +85,22 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
  * Execution result with guaranteed termination
  */
 export interface ResearchResult {
-  readonly state: Extract<AgentState, { status: 'completed' }>;
+  readonly query: string;
   readonly answer: string;
   readonly references: ReadonlyArray<Reference>;
-  readonly metrics: ExecutionMetrics;
-  readonly timeline: ExecutionTimeline;
+  readonly metrics: ResearchMetrics;
+  readonly duration: number;
+  readonly steps: number;
 }
 
 /**
- * Execution metrics
+ * Research metrics
  */
-export interface ExecutionMetrics {
-  readonly totalSteps: number;
-  readonly totalTokens: number;
-  readonly totalDuration: number;
-  readonly actionCounts: Readonly<Record<string, number>>;
-  readonly errorCounts: Readonly<Record<string, number>>;
-}
-
-/**
- * Execution timeline
- */
-export interface ExecutionTimeline {
-  readonly started: Date;
-  readonly completed: Date;
-  readonly steps: ReadonlyArray<{
-    readonly step: number;
-    readonly action: string;
-    readonly timestamp: Date;
-    readonly duration: number;
-  }>;
+export interface ResearchMetrics {
+  readonly searchCount: number;
+  readonly visitCount: number;
+  readonly evaluationCount: number;
+  readonly errorCount: number;
 }
 
 /**
@@ -131,4 +116,46 @@ export function hasStatus<T extends StateStatus>(
   status: T
 ): state is Extract<AgentState, { status: T }> {
   return state.status === status;
+}
+
+/**
+ * Type guard: Idle state
+ */
+export function isIdle(state: AgentState): state is Extract<AgentState, { status: 'idle' }> {
+  return state.status === 'idle';
+}
+
+/**
+ * Type guard: Initializing state
+ */
+export function isInitializing(state: AgentState): state is Extract<AgentState, { status: 'initializing' }> {
+  return state.status === 'initializing';
+}
+
+/**
+ * Type guard: Searching state
+ */
+export function isSearching(state: AgentState): state is Extract<AgentState, { status: 'searching' }> {
+  return state.status === 'searching';
+}
+
+/**
+ * Type guard: Reading state
+ */
+export function isReading(state: AgentState): state is Extract<AgentState, { status: 'reading' }> {
+  return state.status === 'reading';
+}
+
+/**
+ * Type guard: Evaluating state
+ */
+export function isEvaluating(state: AgentState): state is Extract<AgentState, { status: 'evaluating' }> {
+  return state.status === 'evaluating';
+}
+
+/**
+ * Type guard: Reflecting state
+ */
+export function isReflecting(state: AgentState): state is Extract<AgentState, { status: 'reflecting' }> {
+  return state.status === 'reflecting';
 }

@@ -109,7 +109,6 @@
   "references": [],
 
   "watchOptions": {
-    "synchronousWatchDirectoryPattern": "**",
     "excludeDirectories": [
       "**/node_modules",
       "**/dist",

@@ -96,6 +96,31 @@ export class SearchError extends AgentError {
 }
 
 /**
+ * Content errors (potentially retryable)
+ * Example: Failed to read web page content
+ */
+export class ContentError extends AgentError {
+  readonly code = 'CONTENT_ERROR' as const;
+  readonly retryable: boolean;
+
+  constructor(
+    message: string,
+    url?: string,
+    originalError?: Error
+  ) {
+    super(message, { url, originalError });
+    // Retry on network errors
+    this.retryable = !originalError ||
+      (originalError.message.includes('ECONNREFUSED') ||
+       originalError.message.includes('ETIMEDOUT') ||
+       originalError.message.includes('ENOTFOUND'));
+  }
+
+  readonly url?: string;
+  readonly originalError?: Error;
+}
+
+/**
  * Timeout errors (not retryable)
  * Example: Query took too long
  */
