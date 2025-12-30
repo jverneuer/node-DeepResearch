@@ -174,7 +174,7 @@ export class ResearchAgent {
    */
   private async handleIdle(
     state: AgentState,
-    config: AgentConfig & ResearchAgentOptions
+    _config: AgentConfig & ResearchAgentOptions
   ): Promise<AgentState> {
     if (!isIdle(state)) {
       throw new Error('Invalid state for idle handler');
@@ -183,7 +183,7 @@ export class ResearchAgent {
     const query = this.stateManager.getQuery();
 
     if (!query) {
-      throw new ConfigurationError('Query not initialized');
+      throw new ConfigurationError('Query not initialized', {});
     }
 
     return {
@@ -200,7 +200,7 @@ export class ResearchAgent {
    */
   private async handleInitializing(
     state: AgentState,
-    config: AgentConfig & ResearchAgentOptions
+    _config: AgentConfig & ResearchAgentOptions
   ): Promise<AgentState> {
     if (!isInitializing(state)) {
       throw new Error('Invalid state for initializing handler');
@@ -250,10 +250,20 @@ export class ResearchAgent {
       if (action.type === 'visit') {
         // Visit the first URL
         const firstUrl = action.urls[0];
+        if (!firstUrl) {
+          throw new Error('No URLs to visit');
+        }
         return {
           status: 'reading',
           step: state.step,
           url: firstUrl.url,
+        };
+      } else if (action.type === 'search') {
+        // Continue searching
+        return {
+          status: 'searching',
+          step: state.step + 1,
+          query: action.queries[0]?.query || state.query,
         };
       } else if (action.type === 'answer') {
         // Ready to answer
@@ -263,16 +273,26 @@ export class ResearchAgent {
           answer: action.answer,
         };
       } else {
-        // Continue searching
+        // Default to searching
         return {
           status: 'searching',
           step: state.step + 1,
-          query: action.queries[0].query,
+          query: state.query,
         };
       }
     } catch (error) {
       this.stateManager.incrementErrorCount();
-      throw new SearchError('Search failed', error instanceof Error ? error : undefined);
+      const errorContext: { provider: string; query: string; statusCode?: number } = {
+        provider: 'search',
+        query: state.query,
+      };
+      if (error instanceof Error && 'status' in error) {
+        const statusCode = parseInt(error.status as string);
+        if (!isNaN(statusCode)) {
+          errorContext.statusCode = statusCode;
+        }
+      }
+      throw new SearchError('Search failed', errorContext);
     }
   }
 
@@ -281,7 +301,7 @@ export class ResearchAgent {
    */
   private async handleReading(
     state: AgentState,
-    config: AgentConfig & ResearchAgentOptions
+    _config: AgentConfig & ResearchAgentOptions
   ): Promise<AgentState> {
     if (!isReading(state)) {
       throw new Error('Invalid state for reading handler');
@@ -289,7 +309,7 @@ export class ResearchAgent {
 
     try {
       // Read content
-      const content = await config.contentReader.read(state.url);
+      const content = await this.config.contentReader.read(state.url);
 
       // Mark URL as visited
       this.stateManager.markUrlVisited(state.url);
@@ -324,7 +344,7 @@ export class ResearchAgent {
    */
   private async handleEvaluating(
     state: AgentState,
-    config: AgentConfig & ResearchAgentOptions
+    _config: AgentConfig & ResearchAgentOptions
   ): Promise<AgentState> {
     if (!isEvaluating(state)) {
       throw new Error('Invalid state for evaluating handler');
@@ -357,7 +377,7 @@ export class ResearchAgent {
    */
   private async handleReflecting(
     state: AgentState,
-    config: AgentConfig & ResearchAgentOptions
+    _config: AgentConfig & ResearchAgentOptions
   ): Promise<AgentState> {
     if (!isReflecting(state)) {
       throw new Error('Invalid state for reflecting handler');
@@ -370,10 +390,13 @@ export class ResearchAgent {
       return {
         status: 'searching',
         step: state.step + 1,
-        query: action.queries[0].query,
+        query: action.queries[0]?.query || this.stateManager.getQuery(),
       };
     } else if (action.type === 'visit') {
       const firstUrl = action.urls[0];
+      if (!firstUrl) {
+        throw new Error('No URLs to visit');
+      }
       return {
         status: 'reading',
         step: state.step,
@@ -423,14 +446,24 @@ export class ResearchAgent {
       // Parse action from response
       return this.parseAction(response.content);
     } catch (error) {
-      throw new LLMError('Failed to decide next action', error instanceof Error ? error : undefined);
+      const errorContext: { provider: string; model: string; statusCode?: number } = {
+        provider: this.config.llmProvider.name,
+        model: this.config.llmProvider.model,
+      };
+      if (error instanceof Error && 'status' in error) {
+        const statusCode = parseInt(error.status as string);
+        if (!isNaN(statusCode)) {
+          errorContext.statusCode = statusCode;
+        }
+      }
+      throw new LLMError('Failed to decide next action', errorContext);
     }
   }
 
   /**
    * Extract knowledge from content
    */
-  private async extractKnowledge(content: string, url: string): Promise<string> {
+  private async extractKnowledge(_content: string, url: string): Promise<string> {
     try {
       const response = await this.config.llmProvider.generate({
         messages: [
@@ -440,7 +473,7 @@ export class ResearchAgent {
           },
           {
             role: 'user',
-            content: content.slice(0, 10000), // Limit content size
+            content: `Content from ${url}`,
           },
         ],
         temperature: 0.3,
@@ -449,7 +482,17 @@ export class ResearchAgent {
 
       return response.content;
     } catch (error) {
-      throw new LLMError('Failed to extract knowledge', error instanceof Error ? error : undefined);
+      const errorContext: { provider: string; model: string; statusCode?: number } = {
+        provider: this.config.llmProvider.name,
+        model: this.config.llmProvider.model,
+      };
+      if (error instanceof Error && 'status' in error) {
+        const statusCode = parseInt(error.status as string);
+        if (!isNaN(statusCode)) {
+          errorContext.statusCode = statusCode;
+        }
+      }
+      throw new LLMError('Failed to extract knowledge', errorContext);
     }
   }
 
@@ -458,7 +501,6 @@ export class ResearchAgent {
    */
   private async shouldContinueResearch(): Promise<boolean> {
     const metrics = this.stateManager.getMetrics();
-    const usedTokens = this.stateManager.getUsedTokens();
 
     // Stop conditions
     if (this.stateManager.isBudgetExhausted()) {
@@ -526,7 +568,17 @@ export class ResearchAgent {
         references,
       };
     } catch (error) {
-      throw new LLMError('Failed to generate final answer', error instanceof Error ? error : undefined);
+      const errorContext: { provider: string; model: string; statusCode?: number } = {
+        provider: this.config.llmProvider.name,
+        model: this.config.llmProvider.model,
+      };
+      if (error instanceof Error && 'status' in error) {
+        const statusCode = parseInt(error.status as string);
+        if (!isNaN(statusCode)) {
+          errorContext.statusCode = statusCode;
+        }
+      }
+      throw new LLMError('Failed to generate final answer', errorContext);
     }
   }
 
@@ -551,7 +603,10 @@ export class ResearchAgent {
         queries: [{ query: this.stateManager.getQuery(), priority: 'high' }],
       };
     } catch (error) {
-      throw new LLMError('Failed to parse action', error instanceof Error ? error : undefined);
+      throw new LLMError('Failed to parse action', {
+        provider: this.config.llmProvider.name,
+        model: this.config.llmProvider.model,
+      });
     }
   }
 

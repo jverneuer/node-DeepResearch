@@ -120,14 +120,11 @@ export class StateManager {
    * Update state with Immer (immutable)
    */
   update(updater: (draft: import('immer').Draft<ResearchState>) => void): void {
-    const previousState = this.state;
-
-    produce(this.state, (draft) => {
+    const nextState = produce(this.state, (draft) => {
       updater(draft);
-      // Capture patches for undo/redo
     });
 
-    this.state.lastUpdate = new Date();
+    this.state = nextState;
     this.notifyListeners();
   }
 
